@@ -1,0 +1,11 @@
+@import "../../styles/variables.scss";
+
+.login__container {
+  background-color: $secundary-color;
+  width: 100vw;
+  height: 100vh;
+}
+
+.inputError {
+  border-color: red;
+}
