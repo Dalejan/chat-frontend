@@ -1,2 +1,12 @@
 .header__container {
+  display: flex;
+  justify-content: flex-end;
+
+  .logout {
+    margin-left: 40px;
+    background-color: red;
+  }
+  .logout:hover {
+    cursor: pointer;
+  }
 }

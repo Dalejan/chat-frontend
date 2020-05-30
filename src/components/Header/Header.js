@@ -4,13 +4,17 @@ import AuthContext from "../../utils/Auth.context";
 
 const Header = (props) => {
   const { handleAuthFlow } = useContext(AuthContext);
+  const userName = JSON.parse(localStorage.getItem("authInfo")).name;
   const logOut = () => {
     handleAuthFlow(null);
     props.history.push("/login");
   };
   return (
-    <div className={styles.header__container} onClick={() => logOut()}>
-      header
+    <div className={styles.header__container}>
+      <p>Hola {userName}!</p>
+      <p className={styles.logout} onClick={() => logOut()}>
+        Salir
+      </p>
     </div>
   );
 };

@@ -1,10 +1,10 @@
 import gql from "graphql-tag";
 
 export default gql`
-  query getMessagesQuery {
-    messages {
-      text
+  subscription {
+    messageAdded {
       usr
+      text
       date
     }
   }

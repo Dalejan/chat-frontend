@@ -1,31 +1,39 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import styles from "./Chat.module.scss";
 import GET_MESSAGES from "../../../graphql/queries/fetchMessages";
 import ADD_MESSAGE from "../../../graphql/mutations/createMessage";
-import Message from "../../../components/Message/Message";
+import MESSAGE_ADDED from "../../../graphql/subscriptions/newMessage";
 
-import { useQuery, useMutation } from "@apollo/client";
+import Message from "../../../components/Message/Message";
+import { useQuery, useMutation, useSubscription } from "@apollo/client";
 
 const Chat = (prop) => {
-  const [messages, setMessages] = useState([]);
-  const { loading, error, data } = useQuery(GET_MESSAGES);
+  const [addMessage] = useMutation(ADD_MESSAGE);
+
+  const { loading, error, data: { messages } = {}, subscribeToMore } = useQuery(
+    GET_MESSAGES
+  );
+  const { data: { messageAdded } = {} } = useSubscription(MESSAGE_ADDED);
 
   const inputRef = useRef();
 
-  useEffect(() => {
-    if (!loading) {
-      if (data) {
-        setMessages(data.messages);
-      } else {
-        console.log("no messages");
-      }
-    }
-  }, [loading, data]);
+  const subToMessages = useCallback(
+    () =>
+      subscribeToMore({
+        document: MESSAGE_ADDED,
+        updateQuery: (prev, { subscriptionData }) => {
+          if (!subscriptionData?.data) return prev;
+          const newFeedItem = subscriptionData.data.messageAdded;
 
-  const [addMessage] = useMutation(ADD_MESSAGE);
+          return Object.assign({}, prev, {
+            messages: [...prev.messages, newFeedItem],
+          });
+        },
+      }),
+    [subscribeToMore]
+  );
 
   const handleSendMessage = () => {
-    console.log(inputRef.current.value);
     if (inputRef.current.value.trim()) {
       addMessage({
         variables: {
@@ -34,19 +42,31 @@ const Chat = (prop) => {
           date: new Date(),
         },
       });
+      inputRef.current.value = "";
     }
+  };
+
+  useEffect(() => {
+    subToMessages();
+  }, [subToMessages]);
+
+  const orderByDate = (messages) => {
+    return [...messages].sort((a, b) => a.date - b.date);
   };
 
   return (
     <div className={styles.chat__container}>
-      Chat
-      <div className={styles.chatMessages__container}>
-        {messages.map((message, i) => (
-          <Message key={i} message={message} />
-        ))}
+      <div className={styles.chatbox}>
+        {messages &&
+          orderByDate(messages).map((message, i) => (
+            <Message key={i} message={message} />
+          ))}
       </div>
-      <textarea ref={inputRef} placeholder="Escribe algo mi perro"></textarea>
-      <button onClick={() => handleSendMessage()}>Send</button>
+
+      <div className={styles.inputContainer}>
+        <textarea ref={inputRef} placeholder="Escribe algo mi perro"></textarea>
+        <button onClick={() => handleSendMessage()}>Send</button>
+      </div>
     </div>
   );
 };
